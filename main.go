@@ -15,7 +15,7 @@ const (
 )
 
 type (
-	GridUniverse [Size][Size]uint8
+	GridUniverse [Size][Size]uint8 // what will be here with Size=1000000 for example?
 	Universe     interface {
 		Tick() Universe
 		Print()
@@ -24,6 +24,10 @@ type (
 
 func (gu GridUniverse) countCellAliveNeighbors(x, y int) uint16 {
 	var count uint16
+	/*
+	Really strange choose of type. If you are using uint, then looks like you are trying to optimize memory. But the problem is 
+ 	next: your max value will be 8, so its enough uint8 to keep it.
+ 	*/
 	for dy := -1; dy <= 1; dy++ {
 		for dx := -1; dx <= 1; dx++ {
 			if dx == 0 && dy == 0 {
@@ -40,7 +44,10 @@ func (gu GridUniverse) countCellAliveNeighbors(x, y int) uint16 {
 }
 
 func (gu GridUniverse) Tick() Universe {
+	// this function is useless:
 	nextGeneration := seedGridUniverse()
+	// You can just use next line. Result is the same, but without context switch and useless full slice walk
+	// var universe GridUniverse
 
 	for y := 0; y < Size; y++ {
 		for x := 0; x < Size; x++ {
@@ -69,6 +76,7 @@ func (gu GridUniverse) Tick() Universe {
 	return nextGeneration
 }
 
+// Why this var is located here? Between functions. Why we can't move it to the top?
 var glider = [][]uint8{
 	{Dead, Alive, Dead},
 	{Dead, Dead, Alive},
@@ -90,9 +98,12 @@ func seedGridGliderUniverse() Universe {
 	return universe
 }
 
+// as i wrote before, this function is totally useless and will slow application
 func seedGridUniverse() GridUniverse {
 	var universe GridUniverse
 	for y := 0; y < Size; y++ {
+		// Next construction will be much faster:
+		// universe[y] = make([]uint8, 0, Size)
 		for x := 0; x < Size; x++ {
 			universe[y][x] = Dead
 		}
@@ -118,6 +129,7 @@ func (gu GridUniverse) Print() {
 func main() {
 	universe := seedGridGliderUniverse()
 
+	// why we need infinite loop if nothing is changed after 47 iterations?
 	for i := 0; ; i++ {
 		fmt.Printf("Generation %d:\n", i)
 		universe.Print()
